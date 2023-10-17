@@ -1,7 +1,6 @@
 // Typex 3.0 Created by Rully Shabara
 // Official Website: rullyshabara.id
 
-
 let sound1, sound2;
 let loopPlaying1 = false;
 let loopPlaying2 = false;
@@ -23,11 +22,6 @@ let autoSlideTimeout = 1000;  // Default value in milliseconds
 let globalRateSlider;
 let globalRate = 1.0;  // Default rate is 1.0 (normal speed)
 let includeRateCheckbox;
-
-
-
-
-
 
 let soundRecorder;
 let recordedSound;
@@ -468,14 +462,14 @@ function playLoop(playLoopFunc, lettersInput, initialInputValue, loopPlaying, so
 }
 
 
-
-
-
-
 function playLoop1() {
   playLoop(playLoop1, lettersInput1, initialInputValue1, loopPlaying1, sound1, 1);
 }
 
 function playLoop2() {
   playLoop(playLoop2, lettersInput2, initialInputValue2, loopPlaying2, sound2, 2);
+}
+
+function windowResized() {
+  resizeCanvas(windowWidth, windowHeight);
 }
