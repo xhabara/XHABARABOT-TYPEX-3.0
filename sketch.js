@@ -112,7 +112,7 @@ globalRateSlider = createSlider(0.5, 2.0, 1.0, 0.01)  // 0.5 to 2.0 with steps o
     
     includeRateCheckbox = createCheckbox(' Include Autonomous Rate in Xhabarabot Mode', false)
   .position(430, 400)
-  .style("color", "#FFFFFF")
+  .style("color", "#423F3F")
   .style("font-size", "10px");
 
   }
@@ -129,8 +129,17 @@ function updateCurrentRate(rate, whichSound) {
 }
 
 function setupInputFields() {
-  lettersInput1 = createInput().position(width / 1.7 - 50, height / 2 + 28).size(400, 30).style("font-size", "15px");
-  lettersInput2 = createInput().position(width / 1.7 - 50, height / 2 + 138).size(400, 30).style("font-size", "15px");
+  lettersInput1 = createInput()
+    .position(width / 1.7 - 50, height / 2 + 28)
+    .size(400, 30)
+    .style("font-size", "15px")
+    .style("border", "2px solid black");  
+
+  lettersInput2 = createInput()
+    .position(width / 1.7 - 50, height / 2 + 138)
+    .size(400, 30)
+    .style("font-size", "15px")
+    .style("border", "2px solid black");  
 }
 
 
@@ -315,11 +324,9 @@ function setupSlider() {
 
 
 function draw() {
-  background(27); // Clear background
-  fill(255); // Set text color
-  // Display the current rates
-  text("Current Rate 1: " + currentRate1, 365, 180);
-  text("Current Rate 2: " + currentRate2, 610, 180);
+  
+  fill(55); // Set text color
+  
   text("TYPEX 3.0", 300, 150);
   
   globalRate = globalRateSlider.value(); 
@@ -462,6 +469,10 @@ function playLoop(playLoopFunc, lettersInput, initialInputValue, loopPlaying, so
 }
 
 
+
+
+
+
 function playLoop1() {
   playLoop(playLoop1, lettersInput1, initialInputValue1, loopPlaying1, sound1, 1);
 }
@@ -473,3 +484,4 @@ function playLoop2() {
 function windowResized() {
   resizeCanvas(windowWidth, windowHeight);
 }
+
