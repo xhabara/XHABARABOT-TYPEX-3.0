@@ -1,3 +1,7 @@
+// Typex 3.0 Created by Rully Shabara
+// Official Website: rullyshabara.id
+
+
 let sound1, sound2;
 let loopPlaying1 = false;
 let loopPlaying2 = false;
@@ -10,12 +14,25 @@ let filter;
 let syncActive = false;
 let initialInputValue1, initialInputValue2;
 let currentRate1, currentRate2;
-let volumeLevel = 2.5; 
+let volumeLevel = 0.3; 
 let timeoutID1, timeoutID2;
+let compressor;
+let autoSlideActive = false;  
+let autoSlideTimeoutSlider;
+let autoSlideTimeout = 1000;  // Default value in milliseconds
+let globalRateSlider;
+let globalRate = 1.0;  // Default rate is 1.0 (normal speed)
+let includeRateCheckbox;
 
 
 
 
+
+
+let soundRecorder;
+let recordedSound;
+let saveButton;
+let isRecording = false;
 
 let rateMapping = {
   'a': 1.0,    // Root
@@ -49,7 +66,9 @@ let rateMapping = {
 
 function preload() {
   sound1 = loadSound('sound1.mp3');  
-  sound2 = loadSound('sound2.mp3');  
+  sound2 = loadSound('sound2.mp3'); 
+  
+  
 }
 
 function setup() {
@@ -66,6 +85,45 @@ function setup() {
   filter = new p5.HighPass();
   gainNode.connect(filter);
   filter.connect();
+  
+  soundRecorder = new p5.SoundRecorder();
+  recordedSound = new p5.SoundFile();
+  soundRecorder.setInput();  // Record from all sound sources
+  
+  
+   const audioContext = getAudioContext();
+  compressor = audioContext.createDynamicsCompressor();
+  compressor.threshold.setValueAtTime(-50, audioContext.currentTime);
+  compressor.knee.setValueAtTime(40, audioContext.currentTime);
+  compressor.ratio.setValueAtTime(12, audioContext.currentTime);
+  compressor.attack.setValueAtTime(0, audioContext.currentTime);
+  compressor.release.setValueAtTime(0.25, audioContext.currentTime);
+
+  // Connect the compressor
+  compressor.connect(audioContext.destination);
+  sound1.connect(compressor);
+sound2.connect(compressor);
+
+
+  
+  soundRecorder.setInput(compressor);  // Record from the compressor
+
+globalRateSlider = createSlider(0.5, 2.0, 1.0, 0.01)  // 0.5 to 2.0 with steps of 0.01
+    .position(580, 480)
+    .style("width", "250px")
+    .style("cursor", "pointer");
+
+  if (globalRateSlider.elt) {
+    globalRateSlider.elt.style.background = "linear-gradient(90deg, #FF5722 0%, #4CAF50 100%)";
+    
+    includeRateCheckbox = createCheckbox(' Include Autonomous Rate in Xhabarabot Mode', false)
+  .position(430, 400)
+  .style("color", "#FFFFFF")
+  .style("font-size", "10px");
+
+  }
+
+
 }
 
 function updateCurrentRate(rate, whichSound) {
@@ -81,8 +139,9 @@ function setupInputFields() {
   lettersInput2 = createInput().position(width / 1.7 - 50, height / 2 + 138).size(400, 30).style("font-size", "15px");
 }
 
+
 function setupButtons() {
-  loopButton1 = createButton("Loop 1 is Off")
+  loopButton1 = createButton("PLAY LOOP A")
     .position(width / 2 - 160, height / 2 + 26)
     .size(120, 45)
     .style("font-size", "12px")
@@ -94,7 +153,7 @@ function setupButtons() {
     .style("color", "white")
     .mousePressed(toggleLoop1);
 
-  loopButton2 = createButton("Loop 2 is Off")
+  loopButton2 = createButton("PLAY LOOP B")
     .position(width / 2 - 160, height / 2 + 132)
     .size(120, 45)
     .style("font-size", "12px")
@@ -106,7 +165,7 @@ function setupButtons() {
     .style("color", "white")
     .mousePressed(toggleLoop2);
 
-  syncButton = createButton("Sync is Off")
+  syncButton = createButton("SYNC")
     .position(width / 2 - 160, height / 2 + 86)
     .size(120, 25)
     .style("font-size", "16px")
@@ -118,9 +177,20 @@ function setupButtons() {
     .style("color", "white")
     .mousePressed(toggleSync);  
   
+  autoSlideButton = createButton("XHABARABOT MODE")
+  .position(420, 450)
+  .size(120, 45)
+  .style("font-size", "10px")
+  .style("font-weight", "bold")
+  .style("border-radius", "15px")
+  .style("background", "linear-gradient(135deg, #9E9E9E, #616161)")
+  .style("border", "none")
+  .style("cursor", "pointer")
+  .style("color", "white")
+  .mousePressed(toggleAutoSlide);
+
   
-  
-  resetButton1 = createButton("Reset Loop 1")
+  resetButton1 = createButton("Reset Loop A")
   .position(width / 1.6 + 360, height / 2 + 26)
   .size(100, 45)
   .style("font-size", "10px")
@@ -134,11 +204,11 @@ function setupButtons() {
     clearTimeout(timeoutID1);  // Stop the loop timer
     lettersInput1.value("");  // Clear the input field
     loopPlaying1 = false;  // Stop the loop
-    loopButton1.html("Loop 1 is Off");
+    loopButton1.html("Start Loop 1");
     loopButton1.style("background-color", "#121212");
   });
 
-resetButton2 = createButton("Reset Loop 2")
+resetButton2 = createButton("Reset Loop B")
   .position(width / 1.6 + 360, height / 2 + 132)
   .size(100, 45)
   .style("font-size", "10px")
@@ -152,12 +222,71 @@ resetButton2 = createButton("Reset Loop 2")
     clearTimeout(timeoutID2);  // Stop the loop timer
     lettersInput2.value("");  // Clear the input field
     loopPlaying2 = false;  // Stop the loop
-    loopButton2.html("Loop 2 is Off");
+    loopButton2.html("Start Loop 2");
     loopButton2.style("background-color", "#121212");
   });
 
+  saveButton = createButton("START RECORDING")
+    .position(235, 450)
+    .size(150, 50)
+    .style("font-size", "13px")
+    .style("font-weight", "bold")
+    .style("border-radius", "15px")
+    .style("background", "linear-gradient(135deg, #2196F3, #0d47a1)")
+    .style("border", "none")
+    .style("cursor", "pointer")
+    .style("color", "white")
+    .mousePressed(toggleRecording);
 
 }
+
+function toggleAutoSlide() {
+  autoSlideActive = !autoSlideActive;
+  if (autoSlideActive) {
+    autoSlideButton.html("STOP XHABARABOT");
+    autoSlideButton.style("background-color", "#4CAF50");
+    
+    autoSlideTimeoutSlider = createSlider(200, 2000, 1500)  // 200ms to 2000ms
+      .position(580, 450)
+      .style("width", "250px")
+      .style("cursor", "pointer");
+    
+    if (autoSlideTimeoutSlider.elt) {
+      autoSlideTimeoutSlider.elt.style.background = "linear-gradient(90deg, #FF5722 0%, #4CAF50 100%)";
+    }
+
+    startAutoSlide();
+  } else {
+    autoSlideButton.html("START XHABARABOT");
+    autoSlideButton.style("background-color", "#9E9E9E");
+    autoSlideTimeoutSlider.remove();  // This removes the slider
+  }
+}
+
+
+function startAutoSlide() {
+  if (!autoSlideActive) return;
+  
+  // Random delay for the individual sounds
+  let minDelay = 30;
+  let maxDelay = 1000;
+  let newDelay = Math.floor(Math.random() * (maxDelay - minDelay + 1)) + minDelay;
+  delaySlider.value(newDelay);
+  
+  if (includeRateCheckbox.checked()) {
+    // Random global rate between 0.5 and 2.0
+    let minRate = 0.5;
+    let maxRate = 2.0;
+    let newRate = Math.random() * (maxRate - minRate) + minRate;
+    globalRateSlider.value(newRate);
+  }
+  
+  autoSlideTimeout = autoSlideTimeoutSlider.value();  // Get the current value of the timeout slider
+  
+  setTimeout(startAutoSlide, autoSlideTimeout);
+}
+
+
 
 
 function setupSlider() {
@@ -195,10 +324,14 @@ function draw() {
   background(27); // Clear background
   fill(255); // Set text color
   // Display the current rates
-  text("Current Rate 1: " + currentRate1, 370, 180);
+  text("Current Rate 1: " + currentRate1, 365, 180);
   text("Current Rate 2: " + currentRate2, 610, 180);
   text("TYPEX 3.0", 300, 150);
+  
+  globalRate = globalRateSlider.value(); 
+
 }
+
 
 function keyPressed() {
   let keyChar = key.toLowerCase();
@@ -210,19 +343,19 @@ function keyPressed() {
     sound2.play();
 
     filter.freq(10);
-    gainNode.amp(5);
+    gainNode.amp(0.2);
   }
 }
 
 function toggleSync() {
   syncActive = !syncActive;
   if (syncActive) {
-    syncButton.html("Sync is On");
+    syncButton.html("STOP SYNC");
     syncButton.style("background-color", "#4CAF50");  // Green when active
     sharedDelayTime = delaySlider.value();  
     syncInputs();
   } else {
-    syncButton.html("Sync is Off");
+    syncButton.html("SYNC");
     syncButton.style("background-color", "#FF5722");  // Orange when inactive
   }
 }
@@ -230,12 +363,12 @@ function toggleSync() {
 function toggleLoop1() {
   loopPlaying1 = !loopPlaying1;
   if (loopPlaying1) {
-    loopButton1.html("Loop 1 is On");
+    loopButton1.html("Stop Loop A");
     loopButton1.style("background-color", "#4CAF50");
     initialInputValue1 = lettersInput1.value();
     playLoop1();
   } else {
-    loopButton1.html("Loop 1 is Off");
+    loopButton1.html("Start Loop A");
     loopButton1.style("background-color", "#121212");
   }
 }
@@ -243,13 +376,29 @@ function toggleLoop1() {
 function toggleLoop2() {
   loopPlaying2 = !loopPlaying2;
   if (loopPlaying2) {
-    loopButton2.html("Loop 2 is On");
+    loopButton2.html("Stop Loop B");
     loopButton2.style("background-color", "#4CAF50");
     initialInputValue2 = lettersInput2.value();
     playLoop2();
   } else {
-    loopButton2.html("Loop 2 is Off");
+    loopButton2.html("Start Loop B");
     loopButton2.style("background-color", "#121212");
+  }
+}
+
+function toggleRecording() {
+  isRecording = !isRecording;
+  
+  if (isRecording) {
+    saveButton.html("Stop and Download");
+    soundRecorder.setInput(compressor);  // Set input to compressor
+    soundRecorder.record(recordedSound);  // Start recording into our SoundFile object
+  } else {
+    saveButton.html("Downloaded");
+    soundRecorder.stop();  // Stop the recorder
+    setTimeout(() => {  // Give it a moment before saving
+      recordedSound.save('XhabarabotTypex3_Sequence.wav');  // Save file
+    }, 1000);  // Wait a second to make sure recording has fully stopped
   }
 }
 
@@ -262,8 +411,6 @@ function syncInputs() {
     
   }
 }
-
-
 function playLoop(playLoopFunc, lettersInput, initialInputValue, loopPlaying, sound, whichSound) {
   // Stop the loop if loopPlaying is false
   if (!loopPlaying) {
@@ -285,9 +432,16 @@ function playLoop(playLoopFunc, lettersInput, initialInputValue, loopPlaying, so
   
   if (rate) {
     updateCurrentRate(rate, whichSound);  // Update the current rate
-    sound.rate(rate);
+    sound.rate(rate * globalRate); 
+
     sound.setVolume(volumeLevel);
+    if (isRecording) {  // Only connect to the recorder if recording is active
+    
+    }
     sound.play();
+    if (!isRecording) {  // Disconnect from the recorder if recording is not active
+     
+    }
   }
 
   // Push the shifted letter back onto the end of the array
@@ -312,6 +466,7 @@ function playLoop(playLoopFunc, lettersInput, initialInputValue, loopPlaying, so
     timeoutID2 = timeoutID;
   }
 }
+
 
 
 
