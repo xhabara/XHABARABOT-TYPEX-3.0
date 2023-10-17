@@ -1,6 +1,7 @@
 // Typex 3.0 Created by Rully Shabara
 // Official Website: rullyshabara.id
 
+
 let sound1, sound2;
 let loopPlaying1 = false;
 let loopPlaying2 = false;
@@ -22,6 +23,8 @@ let autoSlideTimeout = 1000;  // Default value in milliseconds
 let globalRateSlider;
 let globalRate = 1.0;  // Default rate is 1.0 (normal speed)
 let includeRateCheckbox;
+let seamlessCheckbox;
+
 
 let soundRecorder;
 let recordedSound;
@@ -29,32 +32,32 @@ let saveButton;
 let isRecording = false;
 
 let rateMapping = {
-  'a': 1.0,    // Root
-  'b': 1.125,  // Major second
-  'c': 1.2,    // Minor third
-  'd': 1.25,   // Perfect fourth
-  'e': 1.333,  // Perfect fifth
-  'f': 1.4,    // Minor sixth
-  'g': 1.5,    // Major seventh
-  'h': 0.5,    // Root (lower octave)
-  'i': 0.5625, // Major second (lower octave)
-  'j': 0.6,    // Minor third (lower octave)
-  'k': 0.625,  // Perfect fourth (lower octave)
-  'l': 0.666,  // Perfect fifth (lower octave)
-  'm': 0.7,    // Minor sixth (lower octave)
-  'n': 0.75,   // Major seventh (lower octave)
-  'o': 2.0,    // Root (2nd octave)
-  'p': 2.25,   // Major second (2nd octave)
-  'q': 2.4,    // Minor third (2nd octave)
-  'r': 2.5,    // Perfect fourth (2nd octave)
-  's': 2.666,  // Perfect fifth (2nd octave)
-  't': 2.8,    // Minor sixth (2nd octave)
-  'u': 3.0,    // Major seventh (2nd octave)
-  'v': 4.0,    // Root (3rd octave)
-  'w': 4.5,    // Major second (3rd octave)
-  'x': 4.8,    // Minor third (3rd octave)
-  'y': 5.0,    // Perfect fourth (3rd octave)
-  'z': 5.333  // Perfect fifth (3rd octave)
+  'a': 1.0,    // Root (1st Octave)
+  'b': 9 / 8,  // Major Second (1st Octave)
+  'c': 5 / 4,  // Major Third (1st Octave)
+  'd': 3 / 2,  // Perfect Fifth (1st Octave)
+  'e': 5 / 3,  // Major Sixth (1st Octave)
+  'f': 2.0,    // Root (2nd Octave)
+  'g': 9 / 4,  // Major Second (2nd Octave)
+  'h': 5 / 2,  // Major Third (2nd Octave)
+  'i': 3.0,    // Perfect Fifth (2nd Octave)
+  'j': 10 / 3, // Major Sixth (2nd Octave)
+  'k': 0.5,    // Root (Lower 1st Octave)
+  'l': 9 / 16, // Major Second (Lower 1st Octave)
+  'm': 5 / 8,  // Major Third (Lower 1st Octave)
+  'n': 3 / 4,  // Perfect Fifth (Lower 1st Octave)
+  'o': 5 / 6,  // Major Sixth (Lower 1st Octave)
+  'p': 0.25,   // Root (Lower 2nd Octave)
+  'q': 9 / 32, // Major Second (Lower 2nd Octave)
+  'r': 5 / 16, // Major Third (Lower 2nd Octave)
+  's': 3 / 8,  // Perfect Fifth (Lower 2nd Octave)
+  't': 5 / 12, // Major Sixth (Lower 2nd Octave)
+  'u': 4.0,    // Root (3rd Octave)
+  'v': 9 / 2,  // Major Second (3rd Octave)
+  'w': 5.0,    // Major Third (3rd Octave)
+  'x': 6.0,    // Perfect Fifth (3rd Octave)
+  'y': 20 / 3, // Major Sixth (3rd Octave)
+  'z': 8.0     // Root (4th Octave)
 };
 
 
@@ -114,6 +117,11 @@ globalRateSlider = createSlider(0.5, 2.0, 1.0, 0.01)  // 0.5 to 2.0 with steps o
   .position(430, 400)
   .style("color", "#423F3F")
   .style("font-size", "10px");
+    
+    seamlessCheckbox = createCheckbox(' Smooth Shift', false)
+    .position(680, 400)
+    .style("color", "#423F3F")
+    .style("font-size", "10px");
 
   }
 
@@ -207,7 +215,7 @@ function setupButtons() {
     clearTimeout(timeoutID1);  // Stop the loop timer
     lettersInput1.value("");  // Clear the input field
     loopPlaying1 = false;  // Stop the loop
-    loopButton1.html("Start Loop 1");
+    loopButton1.html("Start Loop A");
     loopButton1.style("background-color", "#121212");
   });
 
@@ -395,7 +403,7 @@ function toggleRecording() {
     soundRecorder.setInput(compressor);  // Set input to compressor
     soundRecorder.record(recordedSound);  // Start recording into our SoundFile object
   } else {
-    saveButton.html("Downloaded");
+    saveButton.html("Start Recording");
     soundRecorder.stop();  // Stop the recorder
     setTimeout(() => {  // Give it a moment before saving
       recordedSound.save('XhabarabotTypex3_Sequence.wav');  // Save file
@@ -404,14 +412,14 @@ function toggleRecording() {
 }
 
 
-
-
 function syncInputs() {
   if (syncActive) {  // Only sync when syncActive is true
     lettersInput2.value(lettersInput1.value());
     
   }
 }
+
+
 function playLoop(playLoopFunc, lettersInput, initialInputValue, loopPlaying, sound, whichSound) {
   // Stop the loop if loopPlaying is false
   if (!loopPlaying) {
@@ -432,17 +440,16 @@ function playLoop(playLoopFunc, lettersInput, initialInputValue, loopPlaying, so
   let rate = rateMapping[key];
   
   if (rate) {
-    updateCurrentRate(rate, whichSound);  // Update the current rate
-    sound.rate(rate * globalRate); 
+    if (seamlessCheckbox.checked()) {
+      smoothRateTransition(sound, rate * globalRate, 100);  // 100ms for the transition
+    } else {
+      // Abrupt change, business as usual
+      updateCurrentRate(rate, whichSound);
+      sound.rate(rate * globalRate);
+    }
 
     sound.setVolume(volumeLevel);
-    if (isRecording) {  // Only connect to the recorder if recording is active
-    
-    }
     sound.play();
-    if (!isRecording) {  // Disconnect from the recorder if recording is not active
-     
-    }
   }
 
   // Push the shifted letter back onto the end of the array
@@ -468,8 +475,23 @@ function playLoop(playLoopFunc, lettersInput, initialInputValue, loopPlaying, so
   }
 }
 
-
-
+function smoothRateTransition(sound, targetRate, duration) {
+  let currentRate = sound.rate();
+  let step = (targetRate - currentRate) / (duration / 10);  // Update every 10ms
+  
+  let smoothStep = function() {
+    currentRate += step;
+    sound.rate(currentRate);
+    
+    if ((step > 0 && currentRate < targetRate) || (step < 0 && currentRate > targetRate)) {
+      setTimeout(smoothStep, 10);
+    } else {
+      sound.rate(targetRate);  // Make sure we exactly hit the target
+    }
+  };
+  
+  smoothStep();
+}
 
 
 
