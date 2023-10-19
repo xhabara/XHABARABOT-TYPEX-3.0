@@ -1,5 +1,5 @@
-// Typex 3.0 Created by Rully Shabara
-// Official Website: rullyshabara.id
+// Xhabarabot - Typex 3.0
+// Created by Rully Shabara 2023
 
 
 let sound1, sound2;
@@ -61,9 +61,11 @@ let rateMapping = {
 };
 
 
+
+
 function preload() {
   sound1 = loadSound('sound1.mp3');  
-  sound2 = loadSound('sound2.mp3'); 
+  sound2 = loadSound('Impos-068.wav'); 
   
   
 }
@@ -141,13 +143,13 @@ function setupInputFields() {
     .position(width / 1.7 - 50, height / 2 + 28)
     .size(400, 30)
     .style("font-size", "15px")
-    .style("border", "2px solid black");  
+    .style("border", "2px solid black");  // Boom! Black outline.
 
   lettersInput2 = createInput()
     .position(width / 1.7 - 50, height / 2 + 138)
     .size(400, 30)
     .style("font-size", "15px")
-    .style("border", "2px solid black");  
+    .style("border", "2px solid black");  // Kaboom! Another one.
 }
 
 
@@ -176,10 +178,10 @@ function setupButtons() {
     .style("color", "white")
     .mousePressed(toggleLoop2);
 
-  syncButton = createButton("SYNC")
+  syncButton = createButton("ADD TO LOOP 2")
     .position(width / 2 - 160, height / 2 + 86)
     .size(120, 25)
-    .style("font-size", "16px")
+    .style("font-size", "10px")
     .style("font-weight", "bold")
     .style("border-radius", "12px")
     .style("background", "linear-gradient(135deg, #FF5722, #bf360c)")
@@ -412,6 +414,8 @@ function toggleRecording() {
 }
 
 
+
+
 function syncInputs() {
   if (syncActive) {  // Only sync when syncActive is true
     lettersInput2.value(lettersInput1.value());
@@ -448,7 +452,11 @@ function playLoop(playLoopFunc, lettersInput, initialInputValue, loopPlaying, so
       sound.rate(rate * globalRate);
     }
 
-    sound.setVolume(volumeLevel);
+    if (whichSound === 1) {
+  sound.setVolume(0.3);  // Crank it up for Loop 1
+} else if (whichSound === 2) {
+  sound.setVolume(0.1);  // Keep it chill for Loop 2
+}
     sound.play();
   }
 
@@ -495,6 +503,10 @@ function smoothRateTransition(sound, targetRate, duration) {
 
 
 
+
+
+
+
 function playLoop1() {
   playLoop(playLoop1, lettersInput1, initialInputValue1, loopPlaying1, sound1, 1);
 }
@@ -506,4 +518,3 @@ function playLoop2() {
 function windowResized() {
   resizeCanvas(windowWidth, windowHeight);
 }
-
